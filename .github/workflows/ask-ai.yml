@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   ask-ai:
@@ -18,28 +17,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
 
-      - name: Install Azure CLI
-        run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Call Azure AI Foundry
         id: ai-response
         env:
           AZURE_OPENAI_ENDPOINT: https://tlaurence-2242-resource.services.ai.azure.com/openai/v1
           AZURE_OPENAI_DEPLOYMENT: gpt-5-mini
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         run: |
           set -euo pipefail
 
+          if [ -z "${AZURE_OPENAI_API_KEY:-}" ]; then
+            echo "AZURE_OPENAI_API_KEY secret is not configured." >&2
+            exit 1
+          fi
+
           RESPONSE=$(curl -sS "$AZURE_OPENAI_ENDPOINT/responses" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $(az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv)" \
+            -H "api-key: $AZURE_OPENAI_API_KEY" \
             -d '{
               "model": "'"$AZURE_OPENAI_DEPLOYMENT"'",
               "input": "Give me a programming joke."
