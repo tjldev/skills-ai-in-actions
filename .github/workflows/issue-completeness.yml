@@ -52,12 +52,23 @@ jobs:
               --arg model "$AZURE_OPENAI_DEPLOYMENT" \
               --arg system "You are a GitHub issue assistant. Your task is to analyze newly opened issues for completeness.\n\nProvide concise, helpful suggestions, ask clarifying questions and identify any missing information that would help resolve the issue faster.\n\nAlways respond with ready-to-use markdown content (no code blocks) that can be posted directly as an issue comment.\n\nSign off as AI assistant." \
               --arg user "New issue was opened by $ISSUE_USER\nTitle: $ISSUE_TITLE\nBody:\n---\n$ISSUE_BODY\n---" \
-              '{model: $model, max_completion_tokens: 1000, messages: [{role: "system", content: $system}, {role: "user", content: $user}]}')")
+              '{model: $model, max_completion_tokens: 4000, messages: [{role: "system", content: $system}, {role: "user", content: $user}]}')")
 
           echo "$RESPONSE" > response.json
+
+          echo "----- Raw Azure OpenAI response -----"
+          cat response.json
+          echo "-------------------------------------"
+
+          CONTENT=$(jq -r '.choices[0].message.content // empty' response.json)
+          if [ -z "$CONTENT" ]; then
+            echo "::error::AI returned no content. finish_reason=$(jq -r '.choices[0].finish_reason // "n/a"' response.json)"
+            exit 1
+          fi
+
           {
             echo "response<<EOF"
-            jq -r '.choices[0].message.content // empty' response.json
+            echo "$CONTENT"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
