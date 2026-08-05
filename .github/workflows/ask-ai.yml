@@ -23,7 +23,6 @@ jobs:
         id: ai-response
         uses: actions/ai-inference@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           model: gpt-4.1
           prompt: |
             Give me a programming joke.
