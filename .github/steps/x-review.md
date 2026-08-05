@@ -1,6 +1,6 @@
 ## Review
 
-_Congratulations! You've completed this exercise and learned how to integrate AI capabilities into GitHub Actions workflows using GitHub Models._
+_Congratulations! You've completed this exercise and learned how to integrate AI capabilities into GitHub Actions workflows using GitHub Copilot._
 
 <img src="https://octodex.github.com/images/jetpacktocat.png" alt="celebrate" width=200 align=right>
 
