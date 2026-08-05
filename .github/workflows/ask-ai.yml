@@ -1,9 +1,11 @@
 name: Ask AI
+
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   ask-ai:
@@ -16,18 +18,35 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
 
-      - name: Install Copilot CLI
-        run: npm install -g @github/copilot
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-      - name: AI Inference
-        id: ai-response
-        uses: actions/ai-inference@v2
+      - name: Azure login
+        uses: azure/login@v2
         with:
-          model: gpt-4.1
-          prompt: |
-            Give me a programming joke.
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Call Azure AI Foundry
+        id: ai-response
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_OPENAI_ENDPOINT: https://tlaurence-2242-resource.services.ai.azure.com/openai/v1
+          AZURE_OPENAI_DEPLOYMENT: gpt-5-mini
+        run: |
+          set -euo pipefail
+
+          RESPONSE=$(curl -sS "$AZURE_OPENAI_ENDPOINT/responses" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $(az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv)" \
+            -d '{
+              "model": "'"$AZURE_OPENAI_DEPLOYMENT"'",
+              "input": "Give me a programming joke."
+            }')
+
+          echo "$RESPONSE" > response.json
+          echo "response=$(jq -r '.output[0].content[0].text // .choices[0].message.content // empty' response.json)" >> "$GITHUB_OUTPUT"
 
       - name: Display AI Response
         run: |
