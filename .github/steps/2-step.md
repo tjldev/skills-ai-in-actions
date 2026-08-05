@@ -46,15 +46,15 @@ We'll follow the three-step pattern: gathering context from issue events, proces
        types: [opened]
 
    permissions:
-     models: read
+     contents: read
      issues: write
    ```
 
-   This workflow will run whenever a new issue is opened with the permissions to access GitHub Models and to write new issue comments.
+   This workflow will run whenever a new issue is opened with the permissions needed to read repository contents and write new issue comments.
 
    > ❗ **Caution:** Copy the contents as provided, as this exact workflow name (`Issue Completeness`) is required to progress to next steps of this exercise.
 
-1. Now we'll create a job that uses the AI inference action.
+1. Now we'll create a job that prepares the runner and uses the AI inference action.
 
    In this scenario we want to analyze the issue content to provide intelligent feedback and recommendations:
 
@@ -66,11 +66,21 @@ We'll follow the three-step pattern: gathering context from issue events, proces
        name: AI Issue Completeness
        runs-on: ubuntu-latest
        steps:
+         - name: Checkout
+           uses: actions/checkout@v5
+
+         - name: Setup Node.js
+           uses: actions/setup-node@v6
+
+         - name: Install Copilot CLI
+           run: npm install -g @github/copilot
+
          - name: Analyze issue with AI
            id: ai-response
            uses: actions/ai-inference@v2
            with:
              token: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
+             model: gpt-4.1
              max-tokens: 1000
              system-prompt: |
                You are a GitHub issue assistant. Your task is to analyze newly opened issues for completeness.
@@ -87,6 +97,8 @@ We'll follow the three-step pattern: gathering context from issue events, proces
                ---
                {% raw %}${{ github.event.issue.body }}{% endraw %}
                ---
+           env:
+             COPILOT_GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
    ```
 
    > 🪧 **Note:** The **`max-tokens`** parameter is used to control the maximum length of the response. Low values could mean the response is cut off halway.

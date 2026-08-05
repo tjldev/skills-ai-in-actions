@@ -3,21 +3,32 @@ on:
   workflow_dispatch:
 
 permissions:
-  models: read
+  contents: read
 
 jobs:
   ask-ai:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: AI Inference
         id: ai-response
         uses: actions/ai-inference@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          model: openai/gpt-4o-mini
+          model: gpt-4.1
           prompt: |
             Give me a programming joke.
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Display AI Response
         run: |
